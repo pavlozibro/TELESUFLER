@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Суфлер</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #000000;
+    --panel: #f2f2f2;
+    --border: #d0d0d0;
+    --accent: #1a1a1a;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+
+  /* ---------- Екран налаштувань ---------- */
+  #setup {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+  }
+
+  h1 {
+    font-size: 26px;
+    margin: 0 0 4px;
+  }
+
+  .subtitle {
+    color: #666;
+    margin: 0 0 24px;
+    font-size: 15px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 260px;
+    font-size: 20px;
+    line-height: 1.5;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    resize: vertical;
+    background: #fff;
+    color: #000;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 18px;
+    margin: 24px 0;
+  }
+
+  .field label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 15px;
+  }
+
+  .field .val {
+    font-weight: 400;
+    color: #666;
+  }
+
+  input[type="range"] {
+    width: 100%;
+  }
+
+  .row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    padding: 16px 28px;
+    border: none;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+  }
+  .btn:active { transform: translateY(1px); }
+
+  .btn.secondary {
+    background: #fff;
+    color: #000;
+    border: 1px solid var(--border);
+  }
+
+  .hint {
+    font-size: 13px;
+    color: #888;
+    margin-top: 6px;
+  }
+
+  /* ---------- Екран суфлера ---------- */
+  #prompter {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    overflow: hidden;
+  }
+  #prompter.active { display: block; }
+
+  #scrollArea {
+    height: 100%;
+    overflow: hidden;
+    padding: 0 6vw;
+  }
+
+  #scrollText {
+    font-size: 6vw;
+    line-height: 1.5;
+    font-weight: 700;
+    color: #000;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    padding-top: 45vh;
+    padding-bottom: 80vh;
+  }
+  #scrollText.mirror { transform: scaleX(-1); }
+
+  /* Центральна лінія-орієнтир */
+  .guideline {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 45vh;
+    height: 2px;
+    background: rgba(200,0,0,.35);
+    pointer-events: none;
+  }
+  .guideline.hidden { display: none; }
+
+  /* Панель керування внизу */
+  #bar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background: rgba(245,245,245,.95);
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+    transition: opacity .3s;
+  }
+  #bar.dim { opacity: 0; }
+  #prompter:hover #bar { opacity: 1; }
+
+  #bar button {
+    font-size: 16px;
+    padding: 10px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    color: #000;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  #bar .speedbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #333;
+  }
+  #bar input[type="range"] { width: 140px; }
+
+  /* Відлік */
+  #countdown {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    color: #000;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 10;
+  }
+  #countdown.active { display: flex; }
+  #countNum {
+    font-size: 30vh;
+    font-weight: 800;
+    line-height: 1;
+  }
+  #countLabel {
+    font-size: 24px;
+    color: #666;
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ЕКРАН НАЛАШТУВАНЬ -->
+<div id="setup">
+  <h1>Суфлер</h1>
+  <p class="subtitle">Встав текст, обери таймер — і встигни сісти перед камерою.</p>
+
+  <textarea id="scriptInput" placeholder="Встав або надрукуй свій текст тут…">Привіт! Це твій текст для суфлера.
+
+Заміни його на свій сценарій. Великий чорний текст сам поповзе вгору, а ти просто читаєш його дивлячись у камеру.
+
+Швидкість, розмір шрифту та таймер можна налаштувати нижче.</textarea>
+
+  <div class="controls">
+    <div class="field">
+      <label>Таймер перед стартом: <span class="val" id="delayVal">5 сек</span></label>
+      <input type="range" id="delay" min="0" max="20" step="1" value="5">
+      <div class="hint">Час, щоб сісти перед камерою.</div>
+    </div>
+
+    <div class="field">
+      <label>Швидкість прокрутки: <span class="val" id="speedVal">5</span></label>
+      <input type="range" id="speed" min="1" max="20" step="1" value="5">
+    </div>
+
+    <div class="field">
+      <label>Розмір шрифту: <span class="val" id="sizeVal">6</span></label>
+      <input type="range" id="size" min="3" max="14" step="0.5" value="6">
+    </div>
+
+    <div class="field">
+      <label>Дзеркальний текст</label>
+      <div class="row">
+        <input type="checkbox" id="mirror" style="width:20px;height:20px;">
+        <span class="hint" style="margin:0;">Для скла/дзеркала над об'єктивом.</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn" id="startBtn">▶ Запустити суфлер</button>
+</div>
+
+<!-- ВІДЛІК -->
+<div id="countdown">
+  <div id="countNum">5</div>
+  <div id="countLabel">сідай перед камерою…</div>
+</div>
+
+<!-- ЕКРАН СУФЛЕРА -->
+<div id="prompter">
+  <div class="guideline" id="guideline"></div>
+  <div id="scrollArea">
+    <div id="scrollText"></div>
+  </div>
+  <div id="bar" class="dim">
+    <button id="playPause">⏸ Пауза</button>
+    <button id="restart">↺ Спочатку</button>
+    <div class="speedbox">
+      Швидкість
+      <input type="range" id="speedLive" min="1" max="20" step="1" value="5">
+      <span id="speedLiveVal">5</span>
+    </div>
+    <button id="toggleGuide">Лінія</button>
+    <button id="exit">✕ Вийти</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // Елементи налаштувань
+  const scriptInput = $('scriptInput');
+  const delay = $('delay'), delayVal = $('delayVal');
+  const speed = $('speed'), speedVal = $('speedVal');
+  const size = $('size'), sizeVal = $('sizeVal');
+  const mirror = $('mirror');
+  const startBtn = $('startBtn');
+
+  // Екрани
+  const setup = $('setup');
+  const countdown = $('countdown');
+  const countNum = $('countNum'), countLabel = $('countLabel');
+  const prompter = $('prompter');
+  const scrollArea = $('scrollArea');
+  const scrollText = $('scrollText');
+  const guideline = $('guideline');
+
+  // Керування суфлером
+  const playPause = $('playPause');
+  const restart = $('restart');
+  const speedLive = $('speedLive'), speedLiveVal = $('speedLiveVal');
+  const toggleGuide = $('toggleGuide');
+  const exit = $('exit');
+
+  // Стан
+  let scrollPos = 0;
+  let running = false;
+  let rafId = null;
+  let currentSpeed = 5;
+  let countdownTimer = null;
+
+  // --- Синхронізація підписів у налаштуваннях ---
+  const plural = (n) => {
+    n = +n;
+    if (n === 0) return '0 сек';
+    return n + ' сек';
+  };
+  delay.oninput = () => delayVal.textContent = plural(delay.value);
+  speed.oninput = () => speedVal.textContent = speed.value;
+  size.oninput = () => sizeVal.textContent = size.value;
+
+  // Завантажити збережене
+  try {
+    const saved = localStorage.getItem('sufler:text');
+    if (saved !== null) scriptInput.value = saved;
+    const s = JSON.parse(localStorage.getItem('sufler:cfg') || '{}');
+    if (s.delay != null) { delay.value = s.delay; delay.oninput(); }
+    if (s.speed != null) { speed.value = s.speed; speed.oninput(); }
+    if (s.size  != null) { size.value  = s.size;  size.oninput(); }
+    if (s.mirror != null) mirror.checked = s.mirror;
+  } catch (e) {}
+
+  function saveCfg() {
+    try {
+      localStorage.setItem('sufler:text', scriptInput.value);
+      localStorage.setItem('sufler:cfg', JSON.stringify({
+        delay: delay.value, speed: speed.value,
+        size: size.value, mirror: mirror.checked
+      }));
+    } catch (e) {}
+  }
+
+  // --- Прокрутка ---
+  function tick() {
+    if (running) {
+      // currentSpeed 1..20 -> пікселі за кадр
+      scrollPos += currentSpeed * 0.12;
+      scrollArea.scrollTop = scrollPos;
+      // зупинка в кінці
+      if (scrollArea.scrollTop + scrollArea.clientHeight >= scrollArea.scrollHeight - 1) {
+        setRunning(false);
+      }
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function setRunning(v) {
+    running = v;
+    playPause.textContent = v ? '⏸ Пауза' : '▶ Далі';
+  }
+
+  // --- Старт з відліком ---
+  function startPrompter() {
+    saveCfg();
+
+    scrollText.textContent = scriptInput.value || ' ';
+    scrollText.style.fontSize = size.value + 'vw';
+    scrollText.classList.toggle('mirror', mirror.checked);
+    currentSpeed = +speed.value;
+    speedLive.value = speed.value;
+    speedLiveVal.textContent = speed.value;
+
+    scrollPos = 0;
+    scrollArea.scrollTop = 0;
+
+    setup.style.display = 'none';
+
+    const secs = +delay.value;
+    if (secs > 0) {
+      runCountdown(secs, launch);
+    } else {
+      launch();
+    }
+  }
+
+  function runCountdown(secs, done) {
+    let left = secs;
+    countdown.classList.add('active');
+    countNum.textContent = left;
+    countdownTimer = setInterval(() => {
+      left--;
+      if (left <= 0) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+        countdown.classList.remove('active');
+        done();
+      } else {
+        countNum.textContent = left;
+      }
+    }, 1000);
+  }
+
+  function launch() {
+    prompter.classList.add('active');
+    setRunning(true);
+    if (!rafId) rafId = requestAnimationFrame(tick);
+  }
+
+  function exitPrompter() {
+    setRunning(false);
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+    countdown.classList.remove('active');
+    prompter.classList.remove('active');
+    setup.style.display = 'block';
+  }
+
+  // --- Події суфлера ---
+  startBtn.onclick = startPrompter;
+  playPause.onclick = () => setRunning(!running);
+  restart.onclick = () => { scrollPos = 0; scrollArea.scrollTop = 0; };
+  exit.onclick = exitPrompter;
+  toggleGuide.onclick = () => guideline.classList.toggle('hidden');
+
+  speedLive.oninput = () => {
+    currentSpeed = +speedLive.value;
+    speedLiveVal.textContent = speedLive.value;
+  };
+
+  // Клавіатура
+  document.addEventListener('keydown', (e) => {
+    if (!prompter.classList.contains('active')) return;
+    if (e.code === 'Space') { e.preventDefault(); setRunning(!running); }
+    else if (e.code === 'Escape') { exitPrompter(); }
+    else if (e.code === 'ArrowUp')   { currentSpeed = Math.min(20, currentSpeed + 1); syncLive(); }
+    else if (e.code === 'ArrowDown') { currentSpeed = Math.max(1, currentSpeed - 1); syncLive(); }
+    else if (e.code === 'Home') { scrollPos = 0; scrollArea.scrollTop = 0; }
+  });
+  function syncLive() {
+    speedLive.value = currentSpeed;
+    speedLiveVal.textContent = currentSpeed;
+  }
+
+  // Тап по екрану — пауза/продовження
+  scrollArea.addEventListener('click', () => setRunning(!running));
+})();
+</script>
+</body>
+</html>
