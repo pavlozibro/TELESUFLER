@@ -402,7 +402,7 @@
   function scrollToWord(idx) {
     const w = scriptWords[idx];
     if (!w) return;
-    voiceTarget = w.el.offsetTop - scrollArea.clientHeight * 0.42;
+    voiceTarget = w.el.offsetTop - scrollArea.clientHeight * 0.45;
     if (voiceTarget < 0) voiceTarget = 0;
     // підсвітка
     scriptWords.forEach((sw, i) => {
@@ -411,37 +411,53 @@
     });
   }
 
-  // Пошук почутого слова попереду по тексту
-  function matchWord(word) {
-    if (!word) return -1;
-    const from = curWordIndex;
-    const win = 25;
-    // точний збіг
-    for (let i = from; i < Math.min(scriptWords.length, from + win); i++) {
-      if (scriptWords[i].norm === word) return i;
+  // Чи збігаються два слова (з поправкою на відмінювання)
+  function wordsMatch(a, b) {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    if (a.length >= 4 && b.length >= 4) {
+      if (a.startsWith(b) || b.startsWith(a)) return true;
+      const n = Math.min(a.length, b.length, 5);   // спільний корінь
+      if (a.slice(0, n) === b.slice(0, n)) return true;
     }
-    // збіг за початком (відмінювання)
-    if (word.length >= 4) {
-      for (let i = from; i < Math.min(scriptWords.length, from + win); i++) {
-        const sw = scriptWords[i].norm;
-        if (sw.length >= 4 && (sw.startsWith(word) || word.startsWith(sw))) return i;
-      }
-    }
-    return -1;
+    return false;
   }
 
+  // Вирівнюємо останні почуті слова по тексту в невеликому вікні попереду.
+  // Шукаємо збіг ПОСЛІДОВНОСТІ (2–3 слів), а не одного, і рухаємось до
+  // найближчої позиції — це прибирає різкі стрибки на частих коротких словах.
   function handleTranscript(text) {
-    const words = text.split(/\s+/).map(normalize).filter(Boolean);
-    if (!words.length) return;
-    // Пробуємо останні кілька почутих слів (нові — важливіші)
-    let best = -1;
-    for (let k = words.length - 1; k >= Math.max(0, words.length - 4); k--) {
-      const p = matchWord(words[k]);
-      if (p > best) best = p;
+    const R = text.split(/\s+/).map(normalize).filter(Boolean);
+    if (!R.length) return;
+
+    const plen = Math.min(3, R.length);            // фраза з останніх 2–3 слів
+    const phrase = R.slice(R.length - plen);
+    const from = Math.max(0, curWordIndex - 2);    // трохи назад — для корекції
+    const to = Math.min(scriptWords.length, curWordIndex + 12); // мале вікно вперед
+
+    let bestPos = -1, bestScore = 0, bestDist = 1e9;
+    for (let p = from; p + plen <= to; p++) {
+      let score = 0;
+      for (let k = 0; k < plen; k++) {
+        if (wordsMatch(scriptWords[p + k].norm, phrase[k])) score++;
+      }
+      if (score === 0) continue;
+      const endIdx = p + plen - 1;
+      const dist = Math.abs(endIdx - curWordIndex);
+      if (score > bestScore || (score === bestScore && dist < bestDist)) {
+        bestScore = score; bestPos = p; bestDist = dist;
+      }
     }
-    if (best >= 0 && best >= curWordIndex) {
-      curWordIndex = best;
-      scrollToWord(best);
+
+    // Щоб прийняти рух, для фрази треба ≥2 збіги поспіль
+    // (для єдиного розпізнаного слова — рівно 1).
+    const need = plen >= 2 ? 2 : 1;
+    if (bestPos >= 0 && bestScore >= need) {
+      const endIdx = bestPos + plen - 1;
+      if (endIdx > curWordIndex || curWordIndex - endIdx <= 2) {
+        curWordIndex = endIdx;
+        scrollToWord(endIdx);
+      }
     }
   }
 
@@ -454,8 +470,9 @@
       recog.continuous = true;
       recog.interimResults = true;
       recog.onresult = (e) => {
-        const r = e.results[e.results.length - 1];
-        handleTranscript(r[0].transcript);
+        let txt = '';
+        for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript + ' ';
+        handleTranscript(txt);
       };
       recog.onerror = (e) => {
         if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
