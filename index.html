@@ -31,20 +31,13 @@
     padding: 24px 20px 60px;
   }
 
-  h1 {
-    font-size: 26px;
-    margin: 0 0 4px;
-  }
+  h1 { font-size: 26px; margin: 0 0 4px; }
 
-  .subtitle {
-    color: #666;
-    margin: 0 0 24px;
-    font-size: 15px;
-  }
+  .subtitle { color: #666; margin: 0 0 24px; font-size: 15px; }
 
   textarea {
     width: 100%;
-    min-height: 260px;
+    min-height: 240px;
     font-size: 20px;
     line-height: 1.5;
     padding: 16px;
@@ -57,32 +50,17 @@
 
   .controls {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 18px;
     margin: 24px 0;
   }
 
-  .field label {
-    display: block;
-    font-weight: 600;
-    margin-bottom: 8px;
-    font-size: 15px;
-  }
+  .field label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 15px; }
+  .field .val { font-weight: 400; color: #666; }
 
-  .field .val {
-    font-weight: 400;
-    color: #666;
-  }
+  input[type="range"] { width: 100%; }
 
-  input[type="range"] {
-    width: 100%;
-  }
-
-  .row {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-  }
+  .row { display: flex; gap: 12px; align-items: center; }
 
   .btn {
     display: inline-flex;
@@ -100,16 +78,14 @@
   }
   .btn:active { transform: translateY(1px); }
 
-  .btn.secondary {
-    background: #fff;
-    color: #000;
-    border: 1px solid var(--border);
-  }
+  .hint { font-size: 13px; color: #888; margin-top: 6px; }
 
-  .hint {
-    font-size: 13px;
-    color: #888;
-    margin-top: 6px;
+  .voicebox {
+    grid-column: 1 / -1;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    background: #fafafa;
   }
 
   /* ---------- Екран суфлера ---------- */
@@ -126,6 +102,7 @@
     height: 100%;
     overflow: hidden;
     padding: 0 6vw;
+    scroll-behavior: auto;
   }
 
   #scrollText {
@@ -140,11 +117,13 @@
   }
   #scrollText.mirror { transform: scaleX(-1); }
 
-  /* Центральна лінія-орієнтир */
+  .w { transition: color .15s, background-color .15s; }
+  .w.cur { background: #ffe680; border-radius: 4px; }
+  .w.done { color: #9a9a9a; }
+
   .guideline {
     position: fixed;
-    left: 0;
-    right: 0;
+    left: 0; right: 0;
     top: 45vh;
     height: 2px;
     background: rgba(200,0,0,.35);
@@ -152,7 +131,6 @@
   }
   .guideline.hidden { display: none; }
 
-  /* Панель керування внизу */
   #bar {
     position: fixed;
     left: 0; right: 0; bottom: 0;
@@ -166,8 +144,6 @@
     flex-wrap: wrap;
     transition: opacity .3s;
   }
-  #bar.dim { opacity: 0; }
-  #prompter:hover #bar { opacity: 1; }
 
   #bar button {
     font-size: 16px;
@@ -179,14 +155,20 @@
     cursor: pointer;
     font-weight: 600;
   }
-  #bar .speedbox {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: #333;
+  #bar button.on { background: #d8f5d8; border-color: #6cc06c; }
+  #bar .speedbox { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #333; }
+  #bar input[type="range"] { width: 130px; }
+
+  #micDot {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #bbb;
+    margin-right: 6px;
+    vertical-align: middle;
   }
-  #bar input[type="range"] { width: 140px; }
+  #micDot.live { background: #e02424; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
   /* Відлік */
   #countdown {
@@ -201,16 +183,8 @@
     z-index: 10;
   }
   #countdown.active { display: flex; }
-  #countNum {
-    font-size: 30vh;
-    font-weight: 800;
-    line-height: 1;
-  }
-  #countLabel {
-    font-size: 24px;
-    color: #666;
-    margin-top: 20px;
-  }
+  #countNum { font-size: 30vh; font-weight: 800; line-height: 1; }
+  #countLabel { font-size: 24px; color: #666; margin-top: 20px; }
 </style>
 </head>
 <body>
@@ -224,7 +198,7 @@
 
 Заміни його на свій сценарій. Великий чорний текст сам поповзе вгору, а ти просто читаєш його дивлячись у камеру.
 
-Швидкість, розмір шрифту та таймер можна налаштувати нижче.</textarea>
+Швидкість, розмір шрифту та таймер можна налаштувати нижче. А ще можна ввімкнути режим, коли текст їде за твоїм голосом.</textarea>
 
   <div class="controls">
     <div class="field">
@@ -236,6 +210,7 @@
     <div class="field">
       <label>Швидкість прокрутки: <span class="val" id="speedVal">5</span></label>
       <input type="range" id="speed" min="1" max="20" step="1" value="5">
+      <div class="hint">Для звичайної автопрокрутки.</div>
     </div>
 
     <div class="field">
@@ -248,6 +223,23 @@
       <div class="row">
         <input type="checkbox" id="mirror" style="width:20px;height:20px;">
         <span class="hint" style="margin:0;">Для скла/дзеркала над об'єктивом.</span>
+      </div>
+    </div>
+
+    <div class="voicebox">
+      <div class="row">
+        <input type="checkbox" id="voice" style="width:20px;height:20px;">
+        <label for="voice" style="margin:0;font-weight:600;">🎤 Прокрутка за голосом</label>
+      </div>
+      <div class="hint" id="voiceHint">Текст сам їде за тим, що ти говориш. Найкраще працює в Chrome, потрібен дозвіл на мікрофон та інтернет. Мову розпізнавання можна змінити нижче.</div>
+      <div class="row" style="margin-top:10px;">
+        <label style="font-weight:600;font-size:14px;margin:0;">Мова:</label>
+        <select id="lang" style="font-size:15px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;">
+          <option value="uk-UA" selected>Українська</option>
+          <option value="ru-RU">Русский</option>
+          <option value="en-US">English (US)</option>
+          <option value="pl-PL">Polski</option>
+        </select>
       </div>
     </div>
   </div>
@@ -267,8 +259,9 @@
   <div id="scrollArea">
     <div id="scrollText"></div>
   </div>
-  <div id="bar" class="dim">
+  <div id="bar">
     <button id="playPause">⏸ Пауза</button>
+    <button id="micBtn" style="display:none;"><span id="micDot"></span>Голос</button>
     <button id="restart">↺ Спочатку</button>
     <div class="speedbox">
       Швидкість
@@ -284,44 +277,56 @@
 (function () {
   const $ = (id) => document.getElementById(id);
 
-  // Елементи налаштувань
+  // Налаштування
   const scriptInput = $('scriptInput');
   const delay = $('delay'), delayVal = $('delayVal');
   const speed = $('speed'), speedVal = $('speedVal');
   const size = $('size'), sizeVal = $('sizeVal');
   const mirror = $('mirror');
+  const voice = $('voice'), voiceHint = $('voiceHint'), langSel = $('lang');
   const startBtn = $('startBtn');
 
   // Екрани
   const setup = $('setup');
   const countdown = $('countdown');
-  const countNum = $('countNum'), countLabel = $('countLabel');
+  const countNum = $('countNum');
   const prompter = $('prompter');
   const scrollArea = $('scrollArea');
   const scrollText = $('scrollText');
   const guideline = $('guideline');
 
-  // Керування суфлером
+  // Керування
   const playPause = $('playPause');
+  const micBtn = $('micBtn'), micDot = $('micDot');
   const restart = $('restart');
   const speedLive = $('speedLive'), speedLiveVal = $('speedLiveVal');
   const toggleGuide = $('toggleGuide');
   const exit = $('exit');
 
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
   // Стан
   let scrollPos = 0;
-  let running = false;
+  let voiceTarget = 0;
+  let running = false;         // авто-прокрутка
+  let voiceListening = false;  // режим голосу активний
   let rafId = null;
   let currentSpeed = 5;
   let countdownTimer = null;
 
-  // --- Синхронізація підписів у налаштуваннях ---
-  const plural = (n) => {
-    n = +n;
-    if (n === 0) return '0 сек';
-    return n + ' сек';
-  };
-  delay.oninput = () => delayVal.textContent = plural(delay.value);
+  let scriptWords = [];        // [{norm, el}]
+  let curWordIndex = 0;
+  let recog = null;
+
+  // Якщо голос не підтримується — вимикаємо опцію
+  if (!SR) {
+    voice.checked = false;
+    voice.disabled = true;
+    voiceHint.innerHTML = '⚠️ Цей браузер не підтримує розпізнавання голосу. Відкрий у Chrome, щоб користуватися голосовим режимом. Звичайна автопрокрутка працює скрізь.';
+  }
+
+  // Підписи
+  delay.oninput = () => delayVal.textContent = delay.value + ' сек';
   speed.oninput = () => speedVal.textContent = speed.value;
   size.oninput = () => sizeVal.textContent = size.value;
 
@@ -334,25 +339,54 @@
     if (s.speed != null) { speed.value = s.speed; speed.oninput(); }
     if (s.size  != null) { size.value  = s.size;  size.oninput(); }
     if (s.mirror != null) mirror.checked = s.mirror;
+    if (s.voice != null && SR) voice.checked = s.voice;
+    if (s.lang != null) langSel.value = s.lang;
   } catch (e) {}
 
   function saveCfg() {
     try {
       localStorage.setItem('sufler:text', scriptInput.value);
       localStorage.setItem('sufler:cfg', JSON.stringify({
-        delay: delay.value, speed: speed.value,
-        size: size.value, mirror: mirror.checked
+        delay: delay.value, speed: speed.value, size: size.value,
+        mirror: mirror.checked, voice: voice.checked, lang: langSel.value
       }));
     } catch (e) {}
   }
 
-  // --- Прокрутка ---
+  // ---- Побудова слів для голосового режиму ----
+  function normalize(s) {
+    return s.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+  }
+  function escapeHtml(s) {
+    return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  }
+  function buildWords(text) {
+    scriptWords = [];
+    curWordIndex = 0;
+    const lines = text.split('\n');
+    let html = '';
+    lines.forEach((line, li) => {
+      const parts = line.split(/(\s+)/);
+      parts.forEach(p => {
+        if (p === '') return;
+        if (/^\s+$/.test(p)) { html += p; }
+        else { html += '<span class="w">' + escapeHtml(p) + '</span>'; }
+      });
+      if (li < lines.length - 1) html += '\n';
+    });
+    scrollText.innerHTML = html || ' ';
+    const els = scrollText.querySelectorAll('.w');
+    els.forEach(el => scriptWords.push({ norm: normalize(el.textContent), el: el }));
+  }
+
+  // ---- Прокрутка ----
   function tick() {
-    if (running) {
-      // currentSpeed 1..20 -> пікселі за кадр
+    if (voiceListening) {
+      scrollPos += (voiceTarget - scrollPos) * 0.12;   // плавно доганяємо голос
+      scrollArea.scrollTop = scrollPos;
+    } else if (running) {
       scrollPos += currentSpeed * 0.12;
       scrollArea.scrollTop = scrollPos;
-      // зупинка в кінці
       if (scrollArea.scrollTop + scrollArea.clientHeight >= scrollArea.scrollHeight - 1) {
         setRunning(false);
       }
@@ -365,28 +399,113 @@
     playPause.textContent = v ? '⏸ Пауза' : '▶ Далі';
   }
 
-  // --- Старт з відліком ---
+  function scrollToWord(idx) {
+    const w = scriptWords[idx];
+    if (!w) return;
+    voiceTarget = w.el.offsetTop - scrollArea.clientHeight * 0.42;
+    if (voiceTarget < 0) voiceTarget = 0;
+    // підсвітка
+    scriptWords.forEach((sw, i) => {
+      sw.el.classList.toggle('cur', i === idx);
+      sw.el.classList.toggle('done', i < idx);
+    });
+  }
+
+  // Пошук почутого слова попереду по тексту
+  function matchWord(word) {
+    if (!word) return -1;
+    const from = curWordIndex;
+    const win = 25;
+    // точний збіг
+    for (let i = from; i < Math.min(scriptWords.length, from + win); i++) {
+      if (scriptWords[i].norm === word) return i;
+    }
+    // збіг за початком (відмінювання)
+    if (word.length >= 4) {
+      for (let i = from; i < Math.min(scriptWords.length, from + win); i++) {
+        const sw = scriptWords[i].norm;
+        if (sw.length >= 4 && (sw.startsWith(word) || word.startsWith(sw))) return i;
+      }
+    }
+    return -1;
+  }
+
+  function handleTranscript(text) {
+    const words = text.split(/\s+/).map(normalize).filter(Boolean);
+    if (!words.length) return;
+    // Пробуємо останні кілька почутих слів (нові — важливіші)
+    let best = -1;
+    for (let k = words.length - 1; k >= Math.max(0, words.length - 4); k--) {
+      const p = matchWord(words[k]);
+      if (p > best) best = p;
+    }
+    if (best >= 0 && best >= curWordIndex) {
+      curWordIndex = best;
+      scrollToWord(best);
+    }
+  }
+
+  // ---- Розпізнавання голосу ----
+  function startRecog() {
+    if (!SR) return;
+    try {
+      recog = new SR();
+      recog.lang = langSel.value || 'uk-UA';
+      recog.continuous = true;
+      recog.interimResults = true;
+      recog.onresult = (e) => {
+        const r = e.results[e.results.length - 1];
+        handleTranscript(r[0].transcript);
+      };
+      recog.onerror = (e) => {
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+          stopVoice();
+          alert('Немає доступу до мікрофона. Дозволь мікрофон у браузері та спробуй ще раз.');
+        }
+      };
+      recog.onend = () => {
+        // continuous іноді сам зупиняється — перезапускаємо, поки слухаємо
+        if (voiceListening) { try { recog.start(); } catch (e) {} }
+      };
+      recog.start();
+    } catch (e) {}
+  }
+
+  function startVoice() {
+    if (!SR) return;
+    voiceListening = true;
+    setRunning(false);
+    micBtn.classList.add('on');
+    micDot.classList.add('live');
+    startRecog();
+  }
+  function stopVoice() {
+    voiceListening = false;
+    micBtn.classList.remove('on');
+    micDot.classList.remove('live');
+    if (recog) { try { recog.onend = null; recog.stop(); } catch (e) {} recog = null; }
+  }
+
+  // ---- Старт ----
   function startPrompter() {
     saveCfg();
-
-    scrollText.textContent = scriptInput.value || ' ';
+    buildWords(scriptInput.value);
     scrollText.style.fontSize = size.value + 'vw';
     scrollText.classList.toggle('mirror', mirror.checked);
     currentSpeed = +speed.value;
     speedLive.value = speed.value;
     speedLiveVal.textContent = speed.value;
 
-    scrollPos = 0;
+    scrollPos = 0; voiceTarget = 0;
     scrollArea.scrollTop = 0;
+
+    micBtn.style.display = (SR && voice.checked) ? '' : 'none';
 
     setup.style.display = 'none';
 
     const secs = +delay.value;
-    if (secs > 0) {
-      runCountdown(secs, launch);
-    } else {
-      launch();
-    }
+    if (secs > 0) runCountdown(secs, launch);
+    else launch();
   }
 
   function runCountdown(secs, done) {
@@ -396,24 +515,23 @@
     countdownTimer = setInterval(() => {
       left--;
       if (left <= 0) {
-        clearInterval(countdownTimer);
-        countdownTimer = null;
+        clearInterval(countdownTimer); countdownTimer = null;
         countdown.classList.remove('active');
         done();
-      } else {
-        countNum.textContent = left;
-      }
+      } else countNum.textContent = left;
     }, 1000);
   }
 
   function launch() {
     prompter.classList.add('active');
-    setRunning(true);
     if (!rafId) rafId = requestAnimationFrame(tick);
+    if (SR && voice.checked) startVoice();   // режим голосу
+    else setRunning(true);                    // звичайна автопрокрутка
   }
 
   function exitPrompter() {
     setRunning(false);
+    stopVoice();
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
     if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
     countdown.classList.remove('active');
@@ -421,34 +539,29 @@
     setup.style.display = 'block';
   }
 
-  // --- Події суфлера ---
+  // ---- Події ----
   startBtn.onclick = startPrompter;
   playPause.onclick = () => setRunning(!running);
-  restart.onclick = () => { scrollPos = 0; scrollArea.scrollTop = 0; };
+  restart.onclick = () => { scrollPos = 0; voiceTarget = 0; curWordIndex = 0; scrollArea.scrollTop = 0;
+    scriptWords.forEach(sw => sw.el.classList.remove('cur','done')); };
   exit.onclick = exitPrompter;
   toggleGuide.onclick = () => guideline.classList.toggle('hidden');
+  micBtn.onclick = () => { if (voiceListening) stopVoice(); else startVoice(); };
 
-  speedLive.oninput = () => {
-    currentSpeed = +speedLive.value;
-    speedLiveVal.textContent = speedLive.value;
-  };
+  speedLive.oninput = () => { currentSpeed = +speedLive.value; speedLiveVal.textContent = speedLive.value; };
 
-  // Клавіатура
   document.addEventListener('keydown', (e) => {
     if (!prompter.classList.contains('active')) return;
-    if (e.code === 'Space') { e.preventDefault(); setRunning(!running); }
+    if (e.code === 'Space') { e.preventDefault(); if (voiceListening) { stopVoice(); } else setRunning(!running); }
     else if (e.code === 'Escape') { exitPrompter(); }
     else if (e.code === 'ArrowUp')   { currentSpeed = Math.min(20, currentSpeed + 1); syncLive(); }
     else if (e.code === 'ArrowDown') { currentSpeed = Math.max(1, currentSpeed - 1); syncLive(); }
-    else if (e.code === 'Home') { scrollPos = 0; scrollArea.scrollTop = 0; }
+    else if (e.code === 'Home') { restart.onclick(); }
   });
-  function syncLive() {
-    speedLive.value = currentSpeed;
-    speedLiveVal.textContent = currentSpeed;
-  }
+  function syncLive() { speedLive.value = currentSpeed; speedLiveVal.textContent = currentSpeed; }
 
-  // Тап по екрану — пауза/продовження
-  scrollArea.addEventListener('click', () => setRunning(!running));
+  // Тап по тексту — пауза (лише в авто-режимі)
+  scrollArea.addEventListener('click', () => { if (!voiceListening) setRunning(!running); });
 })();
 </script>
 </body>
