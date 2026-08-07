@@ -66,7 +66,8 @@
 
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    grid-auto-rows: 1fr;               /* усі картки однакової висоти */
     gap: 14px; margin: 22px 0;
   }
 
@@ -99,6 +100,7 @@
   }
 
   select {
+    width: 100%;
     font-size: 15px; padding: 9px 10px;
     border: 1px solid var(--border); border-radius: 10px;
     background: var(--panel-2); color: var(--fg); outline: none;
@@ -119,11 +121,11 @@
   .switch input:checked + .track { background: var(--on); }
   .switch input:checked + .track:before { transform: translateX(20px); }
 
+  .actions { display: flex; justify-content: center; margin-top: 24px; }
   .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    width: 100%;
-    font-size: 18px; font-weight: 700;
-    padding: 17px 28px; border: none; border-radius: 14px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    font-size: 16px; font-weight: 600;
+    padding: 14px 40px; border: none; border-radius: 12px;
     background: var(--accent); color: var(--accent-fg); cursor: pointer;
   }
   .btn:active { transform: translateY(1px); }
@@ -200,20 +202,20 @@
 
   <div class="grid">
     <div class="card">
-      <div class="top"><span class="label">Таймер перед стартом</span><span class="val" id="delayVal">5 сек</span></div>
+      <div class="top"><span class="label">Таймер</span><span class="val" id="delayVal">5 сек</span></div>
       <div class="hint">Час, щоб сісти перед камерою.</div>
       <div class="control"><input type="range" id="delay" min="0" max="20" step="1" value="5"></div>
     </div>
 
     <div class="card">
-      <div class="top"><span class="label">Швидкість прокрутки</span><span class="val" id="speedVal">5</span></div>
-      <div class="hint">Для звичайної автопрокрутки.</div>
+      <div class="top"><span class="label">Швидкість</span><span class="val" id="speedVal">5</span></div>
+      <div class="hint">Для автопрокрутки.</div>
       <div class="control"><input type="range" id="speed" min="1" max="20" step="1" value="5"></div>
     </div>
 
     <div class="card">
       <div class="top"><span class="label">Розмір шрифту</span><span class="val" id="sizeVal">6</span></div>
-      <div class="hint">Наскільки великий текст.</div>
+      <div class="hint">Величина тексту.</div>
       <div class="control"><input type="range" id="size" min="3" max="14" step="0.5" value="6"></div>
     </div>
 
@@ -222,36 +224,33 @@
         <span class="label">Темна тема</span>
         <label class="switch"><input type="checkbox" id="themeToggle"><span class="track"></span></label>
       </div>
-      <div class="hint">Білий текст на чорному фоні.</div>
+      <div class="hint">Білий текст на чорному.</div>
     </div>
 
     <div class="card">
       <div class="top">
-        <span class="label">Дзеркальний текст</span>
+        <span class="label">Дзеркало</span>
         <label class="switch"><input type="checkbox" id="mirror"><span class="track"></span></label>
       </div>
-      <div class="hint">Для скла/дзеркала над об'єктивом.</div>
+      <div class="hint">Для дзеркала над об'єктивом.</div>
     </div>
 
-    <div class="card wide">
+    <div class="card">
       <div class="top">
-        <span class="label">🎤 Прокрутка за голосом</span>
+        <span class="label">🎤 За голосом</span>
         <label class="switch"><input type="checkbox" id="voice"><span class="track"></span></label>
       </div>
-      <div class="hint" id="voiceHint">Текст сам їде за тим, що ти говориш. Почни читати з початку — і суфлер сам скинеться на початок. Найкраще працює в Chrome, потрібен дозвіл на мікрофон.</div>
-      <div class="control" style="display:flex;align-items:center;gap:10px;">
-        <span class="label" style="font-size:14px;">Мова:</span>
-        <select id="lang">
-          <option value="uk-UA" selected>Українська</option>
-          <option value="ru-RU">Русский</option>
-          <option value="en-US">English (US)</option>
-          <option value="pl-PL">Polski</option>
-        </select>
-      </div>
+      <div class="hint" id="voiceHint">Текст їде за голосом (Chrome + 🎤).</div>
+      <div class="control"><select id="lang">
+        <option value="uk-UA" selected>Українська</option>
+        <option value="ru-RU">Русский</option>
+        <option value="en-US">English (US)</option>
+        <option value="pl-PL">Polski</option>
+      </select></div>
     </div>
   </div>
 
-  <button class="btn" id="startBtn">▶ Запустити суфлер</button>
+  <div class="actions"><button class="btn" id="startBtn">▶ Запустити суфлер</button></div>
 </div>
 
 <!-- ВІДЛІК -->
