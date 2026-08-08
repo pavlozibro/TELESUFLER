@@ -21,7 +21,7 @@
     --done: #a6a6ab;
     --bar-bg: rgba(246,246,247,.96);
   }
-  body.dark {
+  html.dark {
     --bg: #000000;
     --fg: #f4f4f5;
     --panel: #141416;
@@ -40,8 +40,10 @@
 
   * { box-sizing: border-box; }
 
-  html, body {
-    margin: 0; padding: 0; height: 100%;
+  html { background: var(--bg); transition: background-color .2s; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
     background: var(--bg);
     color: var(--fg);
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -317,10 +319,10 @@
 
   // ---- Тема ----
   function applyTheme(dark) {
-    document.body.classList.toggle('dark', dark);
+    document.documentElement.classList.toggle('dark', dark);
     themeToggle.checked = dark;
   }
-  function toggleTheme() { applyTheme(!document.body.classList.contains('dark')); saveCfg(); }
+  function toggleTheme() { applyTheme(!document.documentElement.classList.contains('dark')); saveCfg(); }
   themeToggle.onchange = () => { applyTheme(themeToggle.checked); saveCfg(); };
   themeBtnSetup.onclick = toggleTheme;
   themeBtn.onclick = toggleTheme;
@@ -350,7 +352,7 @@
       localStorage.setItem('sufler:cfg', JSON.stringify({
         delay: delay.value, speed: speed.value, size: size.value,
         mirror: mirror.checked, voice: voice.checked, lang: langSel.value,
-        dark: document.body.classList.contains('dark')
+        dark: document.documentElement.classList.contains('dark')
       }));
     } catch (e) {}
   }
@@ -377,7 +379,17 @@
   // ---- Прокрутка ----
   function tick() {
     if (voiceListening) {
-      scrollPos += (voiceTarget - scrollPos) * 0.12;
+      const diff = voiceTarget - scrollPos;
+      if (Math.abs(diff) < 0.5) {
+        scrollPos = voiceTarget;
+      } else {
+        let step = diff * 0.06;                              // мʼяке наближення
+        const maxStep = scrollArea.clientHeight * 0.018;     // обмеження ривка
+        if (step > maxStep) step = maxStep;
+        else if (step < -maxStep) step = -maxStep;
+        if (Math.abs(step) < 0.4) step = diff > 0 ? 0.4 : -0.4; // не «повзти» вічно
+        scrollPos += step;
+      }
       scrollArea.scrollTop = scrollPos;
     } else if (running) {
       scrollPos += currentSpeed * 0.12;
