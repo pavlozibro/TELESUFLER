@@ -51,7 +51,14 @@
   }
 
   /* ---------- Налаштування ---------- */
-  #setup { max-width: 880px; margin: 0 auto; padding: 28px 20px 60px; }
+  #setup {
+    max-width: 880px; margin: 0 auto; padding: 24px 20px;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  /* Центрування по вертикалі, коли є вільне місце; інакше — скрол зверху */
+  #setup .head { margin-top: auto; }
+  #setup .actions { margin-bottom: auto; }
 
   .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
   h1 { font-size: 27px; margin: 0; letter-spacing: -.02em; }
