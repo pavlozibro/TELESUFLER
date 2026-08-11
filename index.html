@@ -244,11 +244,6 @@
 
 <!-- НАЛАШТУВАННЯ -->
 <div id="setup">
-  <button class="theme-btn fixed-tr" id="themeBtnSetup" aria-label="Змінити тему" title="Тема">
-    <svg class="theme-ic ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-    <svg class="theme-ic ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-  </button>
-
   <div class="head"><h1>Суфлер</h1></div>
   <p class="subtitle">Встав текст, обери таймер — і встигни сісти перед камерою.</p>
 
@@ -353,7 +348,7 @@
   const size = $('size'), sizeVal = $('sizeVal');
   const mirror = $('mirror');
   const voice = $('voice'), voiceHint = $('voiceHint'), langSel = $('lang');
-  const themeToggle = $('themeToggle'), themeBtnSetup = $('themeBtnSetup'), themeBtn = $('themeBtn');
+  const themeToggle = $('themeToggle'), themeBtn = $('themeBtn');
   const startBtn = $('startBtn');
 
   const setup = $('setup');
@@ -390,7 +385,6 @@
   }
   function toggleTheme() { applyTheme(!isDark()); }
   themeToggle.onchange = () => applyTheme(themeToggle.checked);
-  themeBtnSetup.onclick = toggleTheme;
   themeBtn.onclick = toggleTheme;
 
   // ---- Підписи ----
