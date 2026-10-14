@@ -115,6 +115,7 @@
   .card .val { color: var(--accent); font-weight: 700; font-size: .95rem; font-variant-numeric: tabular-nums; }
   .card .hint { font-size: .82rem; color: var(--faint); line-height: 1.4; }
   .card .control { margin-top: auto; }
+  .card.off { opacity: .45; }
 
   input[type="range"] {
     -webkit-appearance: none; appearance: none;
@@ -254,9 +255,9 @@
 Швидкість, розмір шрифту та таймер можна налаштувати нижче. А ще можна ввімкнути режим, коли текст їде за твоїм голосом — і навіть перезапустити читання з початку, просто почавши говорити спочатку.</textarea>
 
   <div class="grid">
-    <div class="card">
+    <div class="card" id="delayCard">
       <div class="top"><span class="label">Таймер</span><span class="val" id="delayVal">5 сек</span></div>
-      <div class="hint">Час, щоб сісти перед камерою.</div>
+      <div class="hint" id="delayHint">Час, щоб сісти перед камерою.</div>
       <div class="control"><input type="range" id="delay" min="0" max="20" step="1" value="5"></div>
     </div>
 
@@ -344,6 +345,7 @@
 
   const scriptInput = $('scriptInput');
   const delay = $('delay'), delayVal = $('delayVal');
+  const delayCard = $('delayCard'), delayHint = $('delayHint');
   const speed = $('speed'), speedVal = $('speedVal');
   const size = $('size'), sizeVal = $('sizeVal');
   const mirror = $('mirror');
@@ -370,6 +372,8 @@
   let running = false, voiceListening = false;
   let rafId = null, currentSpeed = 5, countdownTimer = null;
   let scriptWords = [], curWordIndex = 0, recog = null;
+  let manualUntil = 0; // поки ручна прокрутка — голос не тягне текст
+  const MANUAL_HOLD = 3000;
 
   if (!SR) {
     voice.checked = false; voice.disabled = true;
@@ -406,6 +410,18 @@
   } catch (e) {}
   themeToggle.checked = isDark();
 
+  // ---- Таймер не потрібен у режимі за голосом ----
+  function syncDelayCard() {
+    const v = !!(SR && voice.checked);
+    delayCard.classList.toggle('off', v);
+    delay.disabled = v;
+    delayHint.textContent = v
+      ? 'За голосом не потрібен — текст стоїть, доки ти мовчиш.'
+      : 'Час, щоб сісти перед камерою.';
+  }
+  voice.addEventListener('change', syncDelayCard);
+  syncDelayCard();
+
   function saveCfg() {
     try {
       localStorage.setItem('sufler:text', scriptInput.value);
@@ -437,7 +453,9 @@
 
   // ---- Прокрутка ----
   function tick() {
-    if (voiceListening) {
+    if (voiceListening && performance.now() < manualUntil) {
+      // користувач гортає вручну — нічого не робимо
+    } else if (voiceListening) {
       const diff = voiceTarget - scrollPos;
       if (Math.abs(diff) < 0.5) {
         scrollPos = voiceTarget;
@@ -458,6 +476,30 @@
     rafId = requestAnimationFrame(tick);
   }
   function setRunning(v) { running = v; playPause.textContent = v ? '⏸ Пауза' : '▶ Далі'; }
+
+  // ---- Ручна прокрутка (колесо / свайп) — у будь-якому режимі ----
+  function maxScroll() { return Math.max(0, scrollArea.scrollHeight - scrollArea.clientHeight); }
+  function manualScroll(dy) {
+    scrollPos = Math.min(maxScroll(), Math.max(0, scrollPos + dy));
+    scrollArea.scrollTop = scrollPos;
+    if (voiceListening) manualUntil = performance.now() + MANUAL_HOLD;
+  }
+  scrollArea.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const k = e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? scrollArea.clientHeight : 1;
+    manualScroll(e.deltaY * k);
+  }, { passive: false });
+
+  let touchY = null;
+  scrollArea.addEventListener('touchstart', (e) => { touchY = e.touches[0].clientY; }, { passive: true });
+  scrollArea.addEventListener('touchmove', (e) => {
+    if (touchY === null) return;
+    e.preventDefault();
+    const y = e.touches[0].clientY;
+    manualScroll(touchY - y);
+    touchY = y;
+  }, { passive: false });
+  scrollArea.addEventListener('touchend', () => { touchY = null; });
 
   function scrollToWord(idx) {
     const w = scriptWords[idx];
@@ -547,7 +589,7 @@
       recog.start();
     } catch (e) {}
   }
-  function startVoice() { if (!SR) return; voiceListening = true; setRunning(false); micBtn.classList.add('on'); micDot.classList.add('live'); startRecog(); }
+  function startVoice() { if (!SR) return; voiceListening = true; manualUntil = 0; setRunning(false); micBtn.classList.add('on'); micDot.classList.add('live'); startRecog(); }
   function stopVoice() {
     voiceListening = false; micBtn.classList.remove('on'); micDot.classList.remove('live');
     if (recog) { try { recog.onend = null; recog.stop(); } catch (e) {} recog = null; }
@@ -565,7 +607,7 @@
     scrollPos = 0; voiceTarget = 0; scrollArea.scrollTop = 0;
     micBtn.style.display = (SR && voice.checked) ? '' : 'none';
     setup.style.display = 'none';
-    const secs = +delay.value;
+    const secs = (SR && voice.checked) ? 0 : +delay.value;
     if (secs > 0) runCountdown(secs, launch); else launch();
   }
   function runCountdown(secs, done) {
@@ -591,6 +633,7 @@
     setup.style.display = 'flex';
   }
   function goStart() {
+    manualUntil = 0;
     scrollPos = 0; voiceTarget = 0; curWordIndex = 0; scrollArea.scrollTop = 0;
     scriptWords.forEach(sw => sw.el.classList.remove('cur', 'done'));
   }
