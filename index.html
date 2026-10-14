@@ -257,7 +257,7 @@
   <div class="grid">
     <div class="card" id="delayCard">
       <div class="top"><span class="label">Таймер</span><span class="val" id="delayVal">5 сек</span></div>
-      <div class="hint" id="delayHint">Час, щоб сісти перед камерою.</div>
+      <div class="hint">Час, щоб сісти перед камерою.</div>
       <div class="control"><input type="range" id="delay" min="0" max="20" step="1" value="5"></div>
     </div>
 
@@ -345,7 +345,7 @@
 
   const scriptInput = $('scriptInput');
   const delay = $('delay'), delayVal = $('delayVal');
-  const delayCard = $('delayCard'), delayHint = $('delayHint');
+  const delayCard = $('delayCard');
   const speed = $('speed'), speedVal = $('speedVal');
   const size = $('size'), sizeVal = $('sizeVal');
   const mirror = $('mirror');
@@ -415,9 +415,6 @@
     const v = !!(SR && voice.checked);
     delayCard.classList.toggle('off', v);
     delay.disabled = v;
-    delayHint.textContent = v
-      ? 'За голосом не потрібен — текст стоїть, доки ти мовчиш.'
-      : 'Час, щоб сісти перед камерою.';
   }
   voice.addEventListener('change', syncDelayCard);
   syncDelayCard();
