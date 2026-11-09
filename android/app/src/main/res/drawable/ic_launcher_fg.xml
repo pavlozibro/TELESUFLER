@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Три рядки тексту над «об'єктивом» -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M36,38h36a3,3 0,0 1,0 6h-36a3,3 0,0 1,0 -6z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.8"
+        android:pathData="M36,50h28a3,3 0,0 1,0 6h-28a3,3 0,0 1,0 -6z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.55"
+        android:pathData="M36,62h20a3,3 0,0 1,0 6h-20a3,3 0,0 1,0 -6z" />
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M70,60m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0" />
+</vector>
